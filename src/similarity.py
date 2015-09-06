@@ -30,17 +30,14 @@ def cosine(dataA, dataB):
     else:
         print("Error: input data type is invalid.")
         return -1
-        
-def jaccard(listA, listB):
-    if type(listA) is list and type(listB) is list:
-        interSet = sum([1 for obj in listA if obj in listB])
-        unionSet = len(listA) + len(listB) - interSet
-        if unionSet == 0:
-            return -1
-        return interSet / unionSet
-    else:
-        print("Error: input data type is invalid.")
+    
+def jaccard(dataA, dataB):
+    # Jaccard similarity is applicable to both list type and dictionary type.
+    interSet = sum([1 for obj in dataA if obj in dataB])
+    unionSet = len(dataA) + len(dataB) - interSet
+    if unionSet == 0:
         return -1
+    return interSet / unionSet
 
 def pearsonr(listA, listB):
     r_row, p_value = pearsonr(scipy.array(listA), scipy.array(listB))

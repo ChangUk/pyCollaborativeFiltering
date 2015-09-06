@@ -2,66 +2,40 @@
 def loadData(filePath, inv = False):
     '''
     Load data from a input file into memory with dictionary format.
-    * Input file format: objectID \t subjectID \t rating \n
-    * Output data format: {objectID1: {subjectID1: rating1, subjectID2: rating2, ...}, objectID2: {...}, ...}
+    * Input file format: userID \t itemID \t rating \n
+    * Output data format: {userID: {itemID: rating, ...}, ...}
     '''
     data = {}
-    objectList = []
-    subjectList = []
     try:
         with open(filePath) as file:
             for line in file:
-                if inv == True:
-                    subjectID, objectID, rating = line.split('\t')
+                tokens = line.split('\t')
+                user = tokens[0]
+                item = tokens[1]
+                rating = 1
+                if len(tokens) == 3:
+                    rating = tokens[2]
+                
+                if inv == False:
+                    data.setdefault(user, {})
+                    data[user][item] = int(rating)
                 else:
-                    objectID, subjectID, rating = line.split('\t')
-                data.setdefault(objectID, {})
-                data[objectID][subjectID] = int(rating)
-                if objectID not in objectList:
-                    objectList.append(objectID)
-                if subjectID not in subjectList:
-                    subjectList.append(subjectID)
+                    data.setdefault(item, {})
+                    data[item][user] = int(rating)
             file.close()
     except IOError as e:
         print(e)
-        return
-    return data, objectList, subjectList
-
-def loadRelationsOnly(filePath, inv = False):
-    '''
-    From a input file, load data which has no rating score into memory with dictionary format.
-    * Input file format: objectID \t subjectID \n
-    * Output data format: {objectID1: [subjectID2, subjectID2, ...], objectID2: [...], ...}
-    '''
-    data = {}
-    objectList = []
-    subjectList = []
-    try:
-        with open(filePath) as file:
-            for line in file:
-                if inv == True:
-                    subjectID, objectID = line.split('\t')
-                else:
-                    objectID, subjectID = line.split('\t')
-                data.setdefault(objectID, [])
-                data[objectID].append(subjectID)
-                if objectID not in objectList:
-                    objectList.append(objectID)
-                if subjectID not in subjectList:
-                    subjectList.append(subjectID)
-    except IOError as e:
-        print(e)
-        return
-    return data, objectList, subjectList
+        return None
+    return data
 
 def transposePrefs(prefs):
     '''
     Transpose the preference data by switching object and subject.
     For example, the preference data on users can be transformed into the preferences data on items.
     '''
-    result = {}
+    transposed = {}
     for obj in prefs:
         for subj in prefs[obj]:
-            result.setdefault(subj, {})
-            result[subj][obj] = prefs[obj][subj]
-    return result
+            transposed.setdefault(subj, {})
+            transposed[subj][obj] = prefs[obj][subj]
+    return transposed
