@@ -31,6 +31,9 @@ def loadData(filePath, inv = False):
         return None
     return data
 
+def LeaveOneOutSplit(pathData):
+    return LeaveNOutSplit(pathData, N=1)
+
 def LeaveNOutSplit(pathData, N = 1):
     '''
     Split dataset into training data and testset data for Leave-one-out or Leave-N-out validation

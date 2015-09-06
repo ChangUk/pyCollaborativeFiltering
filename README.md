@@ -22,5 +22,5 @@ UserID \t ItemID \t Count \n
 ...     recommendation = ubcf.Recommendation(model, user, topN=10)
 ```
 
-## Reference
+## References
 * Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)

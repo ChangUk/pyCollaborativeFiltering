@@ -6,7 +6,7 @@ import tool
 
 def LeaveOneOutValidation(pathData, recommender, topN = 10, nNeighbors = 100):
     # Data split
-    trainSet, testSet = tool.LeaveNOutSplit(pathData, N=1)
+    trainSet, testSet = tool.LeaveOneOutSplit(pathData)
     
     # File path
     curDir = os.path.dirname(os.path.abspath(pathData)) + "/"
