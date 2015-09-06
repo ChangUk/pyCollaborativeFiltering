@@ -64,7 +64,7 @@ class UserBased(CollaborativeFiltering):
         self.itemList = self.getSubjectList(self.prefs)
         print("\tDone!")
         
-    def buildModel(self, nSimilarUsers, pathDump):
+    def buildModel(self, nSimilarUsers = 100, pathDump = None):
         print("Model builder is running...")
         # Model contains top-K similar users for each user and their similarities.
         # Model format: {user: {neighbor: similarity, ...}, ...}
@@ -80,7 +80,9 @@ class UserBased(CollaborativeFiltering):
             model[user] = {}
             for entry in mostSimilarUsers:
                 model[user][entry[0]] = entry[1]
-        self.dumpModel(model, pathDump)
+        
+        if pathDump != None:
+            self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
         
@@ -99,7 +101,7 @@ class UserBased(CollaborativeFiltering):
             return 0
         return meanRating + (weightedSum / normalizingFactor)
     
-    def Recommendation(self, model, user, topN):
+    def Recommendation(self, model, user, topN = 10):
         predictedScores = {}
         for item in self.itemList:
             if item not in self.prefs[user]:
@@ -129,7 +131,7 @@ class ItemBased(CollaborativeFiltering):
         self.itemList = self.prefs.keys()
         print("\tDone!")
         
-    def buildModel(self, nSimilarItems, pathDump):
+    def buildModel(self, nSimilarItems = 100, pathDump = None):
         '''
         The j-th column of the model(matrix) stores the k most similar items to item j.
         But, in this project, the model is not matrix but dictionary type.
@@ -159,11 +161,12 @@ class ItemBased(CollaborativeFiltering):
                 for r in model[c]:
                     model[c][r] /= COLSUM
         
-        self.dumpModel(model, pathDump)
+        if pathDump != None:
+            self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
     
-    def Recommendation(self, model, user, topN):
+    def Recommendation(self, model, user, topN = 10):
         '''
         Pseudo code:
         ApplyModel(M, U, N):
