@@ -12,7 +12,10 @@ def loadData(filePath, inv = False):
     try:
         with open(filePath) as file:
             for line in file:
-                tokens = line.split('\t')
+                line = line.replace("\n", "")
+                tokens = line.split("\t")
+                if len(tokens) < 2:
+                    continue
                 user = tokens[0]
                 item = tokens[1]
                 rating = 1

@@ -4,7 +4,7 @@ from recommender import ItemBased, UserBased
 import tool
 
 
-def LeaveOneOutValidation(pathData, recommender, topN = 10, nNeighbors = 100):
+def LeaveOneOutValidation(pathData, recommender, topN = 10):
     # Data split
     trainSet, testSet = tool.LeaveOneOutSplit(pathData)
     
@@ -17,7 +17,7 @@ def LeaveOneOutValidation(pathData, recommender, topN = 10, nNeighbors = 100):
     recommender.loadData(trainSet)
     model = recommender.loadExtModel(pathModel)
     if model == None:
-        model = recommender.buildModel(nNeighbors, pathModel)
+        model = recommender.buildModel(pathModel)
     
     print("Leave-one-out validation...")
     precision = 0
@@ -44,10 +44,10 @@ def LeaveOneOutValidation(pathData, recommender, topN = 10, nNeighbors = 100):
     return precision, recall, hitrate
     
 if __name__ == "__main__":
-    pathData = "/home2/test/shopping.dat"
+    pathData = "/home2/test/movielens.dat"
     
-    ubcf = UserBased()
-    LeaveOneOutValidation(pathData, ubcf)
+    ubcf = UserBased(50)
+    LeaveOneOutValidation(pathData, ubcf, 10)
     
-    ibcf = ItemBased()
-    LeaveOneOutValidation(pathData, ibcf)
+    ibcf = ItemBased(20)
+    LeaveOneOutValidation(pathData, ibcf, 10)

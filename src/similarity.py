@@ -1,8 +1,6 @@
 from math import sqrt
 
-import scipy
-from scipy.stats import pearsonr
-from scipy.stats.stats import spearmanr
+import numpy as np
 
 def cosine(dataA, dataB):
     if type(dataA) is list and type(dataB) is list:
@@ -21,12 +19,51 @@ def cosine(dataA, dataB):
         if len(interSet) == 0:
             return 0
         AB = sum([dataA[obj] * dataB[obj] for obj in interSet])
-        normA = sqrt(sum([dataA[obj] ** 2 for obj in interSet]))
-        normB = sqrt(sum([dataB[obj] ** 2 for obj in interSet]))
+        normA = sqrt(sum([dataA[obj] ** 2 for obj in dataA]))
+        normB = sqrt(sum([dataB[obj] ** 2 for obj in dataB]))
         denominator = normA * normB
         if denominator == 0:
             return -1
         return AB / denominator
+    else:
+        print("Error: input data type is invalid.")
+        return -1
+    
+def pearson(dataA, dataB):
+    if type(dataA) is list and type(dataB) is list:
+        if len(dataA) != len(dataB):
+            print("Error: the length of two input lists are not same.")
+            return -1
+        length = len(dataA)
+        interSet = [i for i in range(length) if dataA[i] != 0 and dataB[i] != 0]    # Contains indices of co-rated items
+        if len(interSet) == 0:
+            return 0
+        meanA = np.mean([dataA[i] for i in range(length) if dataA[i] != 0])
+        meanB = np.mean([dataB[i] for i in range(length) if dataB[i] != 0])
+        numerator = sum([(dataA[i] - meanA) * (dataB[i] - meanB) for i in interSet])
+        deviationA = sqrt(sum([(dataA[i] - meanA) ** 2 for i in interSet]))
+        deviationB = sqrt(sum([(dataB[i] - meanB) ** 2 for i in interSet]))
+        if (deviationA * deviationB) == 0:
+            return 0
+        return numerator / (deviationA * deviationB)
+    elif type(dataA) is dict and type(dataB) is dict:
+        interSet = [obj for obj in dataA if obj in dataB]
+        if len(interSet) == 0:
+            return 0
+        meanA = np.mean([dataA[obj] for obj in dataA.keys()])
+        meanB = np.mean([dataB[obj] for obj in dataB.keys()])
+        numerator = sum([(dataA[obj] - meanA) * (dataB[obj] - meanB) for obj in interSet])
+        deviationA = sqrt(sum([(dataA[obj] - meanA) ** 2 for obj in interSet]))
+        deviationB = sqrt(sum([(dataB[obj] - meanB) ** 2 for obj in interSet]))
+        if (deviationA * deviationB) == 0:
+            return 0
+        correlation = numerator / (deviationA * deviationB)
+        
+        # Correlation significance weighting
+        if len(interSet) < 50:
+            correlation *= (len(interSet) / 50)
+        
+        return correlation
     else:
         print("Error: input data type is invalid.")
         return -1
@@ -38,11 +75,3 @@ def jaccard(dataA, dataB):
     if unionSet == 0:
         return -1
     return interSet / unionSet
-
-def pearsonr(listA, listB):
-    r_row, p_value = pearsonr(scipy.array(listA), scipy.array(listB))
-    return r_row
-
-def spearmanr(listX, listY):
-    r_row, p_value = spearmanr(scipy.array(listX), scipy.array(listY))
-    return r_row

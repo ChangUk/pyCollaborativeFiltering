@@ -6,10 +6,11 @@ import tool
 
 
 class CollaborativeFiltering:
-    def __init__(self, title, similarityMeasure):
+    def __init__(self, title, similarityMeasure, nNearestNeighbors):
         self.title = title
         self.prefs = {}     # Training data
         self.similarityMeasure = similarityMeasure
+        self.nNearestNeighbors = nNearestNeighbors
         
     def viewStatistics(self):
         objList = []        # Users in user-based, items in item-based
@@ -50,10 +51,14 @@ class CollaborativeFiltering:
         file.close()
 
 class UserBased(CollaborativeFiltering):
-    def __init__(self):
-        CollaborativeFiltering.__init__(self, title="ubcf", similarityMeasure=similarity.cosine)
+    '''
+    For more details, reference the following paper:
+    An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)
+    '''
+    def __init__(self, nNearestNeighbors = 50):
+        CollaborativeFiltering.__init__(self, title="ubcf", similarityMeasure = similarity.pearson, nNearestNeighbors)
         self.itemList = []
-        print("User-based collaborative filtering")
+        print("User-based Collaborative Filtering")
         
     def loadData(self, data):
         print("Loading training data...")
@@ -64,7 +69,7 @@ class UserBased(CollaborativeFiltering):
         self.itemList = self.getSubjectList(self.prefs)
         print("\tDone!")
         
-    def buildModel(self, nSimilarUsers = 100, pathDump = None):
+    def buildModel(self, pathDump = None):
         print("Model builder is running...")
         # Model contains top-K similar users for each user and their similarities.
         # Model format: {user: {neighbor: similarity, ...}, ...}
@@ -75,24 +80,37 @@ class UserBased(CollaborativeFiltering):
                 if user == other:
                     continue
                 similarities[other] = self.similarityMeasure(self.prefs[user], self.prefs[other])
-            sortedList = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-            mostSimilarUsers = sortedList[0: nSimilarUsers]
-            model[user] = {}
-            for entry in mostSimilarUsers:
-                model[user][entry[0]] = entry[1]
+            model[user] = similarities
+#             sortedList = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+#             mostSimilarUsers = sortedList[0: nSimilarUsers]
+#             model[user] = {}
+#             for entry in mostSimilarUsers:
+#                 model[user][entry[0]] = entry[1]
         
         if pathDump != None:
             self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
-        
+    
     def getPredictedRating(self, model, user, item):
+        sortedList = sorted(model[user].items(), key=lambda x: x[1], reverse=True)
+        nearestNeighbors = {}
+        for entry in sortedList:
+            candidate = entry[0]
+            similarity = entry[1]
+            if item in self.prefs[candidate]:
+                nearestNeighbors[candidate] = similarity
+            if len(nearestNeighbors) == self.nNearestNeighbors:
+                break
+        
         meanRating = np.mean([r for r in self.prefs[user].values()])
         weightedSum = 0
         normalizingFactor = 0
-        for similarUser in model[user].keys():
-            similarity = model[user][similarUser]
+        for similarUser in nearestNeighbors:
             if item not in self.prefs[user] and item in self.prefs[similarUser]:
+                # Similarity between target user and his/her nearest neighbor
+                similarity = model[user][similarUser]
+                
                 meanRatingOfNeighbor = np.mean([r for r in self.prefs[similarUser].values()])
                 weightedSum += similarity * (self.prefs[similarUser][item] - meanRatingOfNeighbor)
                 normalizingFactor += np.abs(similarity)
@@ -115,10 +133,11 @@ class ItemBased(CollaborativeFiltering):
     For more details, reference the following paper:
     Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)
     '''
-    def __init__(self):
-        CollaborativeFiltering.__init__(self, title="ibcf", similarityMeasure=similarity.cosine)
+    def __init__(self, nNearestNeighbors = 20):
+        CollaborativeFiltering.__init__(self, title="ibcf", similarityMeasure = similarity.cosine, nNearestNeighbors)
         self.prefsOnUser = {}
-        print("Item-based collaborative filtering")
+        self.itemList = []
+        print("Item-based Collaborative Filtering")
         
     def loadData(self, data):
         print("Loading training data...")
@@ -131,7 +150,7 @@ class ItemBased(CollaborativeFiltering):
         self.itemList = self.prefs.keys()
         print("\tDone!")
         
-    def buildModel(self, nSimilarItems = 100, pathDump = None):
+    def buildModel(self, pathDump = None):
         '''
         The j-th column of the model(matrix) stores the k most similar items to item j.
         But, in this project, the model is not matrix but dictionary type.
@@ -148,7 +167,7 @@ class ItemBased(CollaborativeFiltering):
                     continue
                 similarities[other] = self.similarityMeasure(self.prefs[item], self.prefs[other])
             sortedList = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-            mostSimilarItems = sortedList[0: nSimilarItems]
+            mostSimilarItems = sortedList[0: self.nNearestNeighbors]
             for entry in mostSimilarItems:
                 model[item][entry[0]] = entry[1]
         
