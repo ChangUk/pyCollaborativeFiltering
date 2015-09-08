@@ -25,13 +25,10 @@ def LeaveOneOutValidation(recommender, pathData, topN = 10, nNeighbors = 20):
     nTrials = 0
     for user in testSet.keys():
         recommendation = recommender.Recommendation(model, user, topN)
-        hit = 0
-        for item in testSet[user]:
-            if item in recommendation:
-                hit += 1
-                totalHits += 1
+        hit = sum([1 for item in testSet[user] if item in recommendation])
         precision += hit / topN
         recall += hit / len(testSet[user])
+        totalHits += hit
         nTrials += 1
     precision /= nTrials
     recall /= nTrials
@@ -54,10 +51,7 @@ def evaluation(recommender, trainSet, testSet, topN = 10, nNeighbors = 20):
     nTrials = 0
     for user in testSet:
         recommendation = recommender.Recommendation(model, user, topN)
-        hit = 0
-        for item in testSet[user]:
-            if item in recommendation:
-                hit += 1
+        hit = sum([1 for item in testSet[user] if item in recommendation])
         precision += hit / topN
         recall += hit / len(testSet[user])
         totalHits += hit
