@@ -18,10 +18,10 @@ def loadData(filePath, inv = False):
                     continue
                 user = tokens[0]
                 item = tokens[1]
-                rating = 1
-                if len(tokens) == 3:
+                if len(tokens) > 2:
                     rating = tokens[2]
-                
+                if len(tokens) > 3:
+                    date = tokens[3]
                 if inv == False:
                     data.setdefault(user, {})
                     data[user][item] = int(rating)
