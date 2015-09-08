@@ -56,7 +56,7 @@ class UserBased(CollaborativeFiltering):
     An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)
     '''
     def __init__(self, nNearestNeighbors = 50):
-        CollaborativeFiltering.__init__(self, title="ubcf", similarityMeasure = similarity.pearson, nNearestNeighbors)
+        CollaborativeFiltering.__init__(self, title="ubcf", similarityMeasure = similarity.pearson, nNearestNeighbors = nNearestNeighbors)
         self.itemList = []
         print("User-based Collaborative Filtering")
         
@@ -81,52 +81,51 @@ class UserBased(CollaborativeFiltering):
                     continue
                 similarities[other] = self.similarityMeasure(self.prefs[user], self.prefs[other])
             model[user] = similarities
-#             sortedList = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-#             mostSimilarUsers = sortedList[0: nSimilarUsers]
-#             model[user] = {}
-#             for entry in mostSimilarUsers:
-#                 model[user][entry[0]] = entry[1]
         
         if pathDump != None:
             self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
     
-    def getPredictedRating(self, model, user, item):
-        sortedList = sorted(model[user].items(), key=lambda x: x[1], reverse=True)
-        nearestNeighbors = {}
-        for entry in sortedList:
-            candidate = entry[0]
-            similarity = entry[1]
-            if item in self.prefs[candidate]:
-                nearestNeighbors[candidate] = similarity
-            if len(nearestNeighbors) == self.nNearestNeighbors:
-                break
+    def getPredictedRating(self, nearestNeighbors, user, item):
+        if item in self.prefs[user]:
+            return self.prefs[user][item]
         
         meanRating = np.mean([r for r in self.prefs[user].values()])
         weightedSum = 0
         normalizingFactor = 0
         for similarUser in nearestNeighbors:
-            if item not in self.prefs[user] and item in self.prefs[similarUser]:
-                # Similarity between target user and his/her nearest neighbor
-                similarity = model[user][similarUser]
-                
-                meanRatingOfNeighbor = np.mean([r for r in self.prefs[similarUser].values()])
-                weightedSum += similarity * (self.prefs[similarUser][item] - meanRatingOfNeighbor)
-                normalizingFactor += np.abs(similarity)
-                
+            similarity = nearestNeighbors[similarUser]
+            meanRatingOfNeighbor = np.mean([r for r in self.prefs[similarUser].values()])
+            weightedSum += similarity * (self.prefs[similarUser][item] - meanRatingOfNeighbor)
+            normalizingFactor += np.abs(similarity)
+            
         if normalizingFactor == 0:
             return 0
         return meanRating + (weightedSum / normalizingFactor)
     
     def Recommendation(self, model, user, topN = 10):
+        # Nearest neighbors in order
+        sortedNeighbors = sorted(model[user].items(), key=lambda x: x[1], reverse=True)
+        
         predictedScores = {}
         for item in self.itemList:
             if item not in self.prefs[user]:
-                predictedScores[item] = self.getPredictedRating(model, user, item)
+                # Find nearest neighbors who rated for the given item
+                nearestNeighbors = {}
+                for entry in sortedNeighbors:
+                    neighbor = entry[0]
+                    similarity = entry[1]
+                    if item in self.prefs[neighbor]:
+                        nearestNeighbors[neighbor] = similarity
+                    if len(nearestNeighbors) == self.nNearestNeighbors:
+                        break
+                
+                # Get predicted score for unrated item
+                predictedScores[item] = self.getPredictedRating(nearestNeighbors, user, item)
         sortedCandidates = sorted(predictedScores.items(), key=lambda x: x[1], reverse=True)
-        recommendation = [sortedCandidates[i][0] for i in range(topN)]
-        return recommendation
+        recommendation = [sortedCandidates[i][0] for i in range(len(sortedCandidates))]
+        return recommendation[0:topN]
     
 class ItemBased(CollaborativeFiltering):
     '''
@@ -134,7 +133,7 @@ class ItemBased(CollaborativeFiltering):
     Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)
     '''
     def __init__(self, nNearestNeighbors = 20):
-        CollaborativeFiltering.__init__(self, title="ibcf", similarityMeasure = similarity.cosine, nNearestNeighbors)
+        CollaborativeFiltering.__init__(self, title="ibcf", similarityMeasure = similarity.cosine, nNearestNeighbors = nNearestNeighbors)
         self.prefsOnUser = {}
         self.itemList = []
         print("Item-based Collaborative Filtering")
@@ -207,5 +206,5 @@ class ItemBased(CollaborativeFiltering):
                     score += model[item][candidate] * self.prefsOnUser[user][item]
             predictedScores[candidate] = score
         sortedCandidates = sorted(predictedScores.items(), key=lambda x: x[1], reverse=True)
-        recommendation = [sortedCandidates[i][0] for i in range(topN)]
-        return recommendation
+        recommendation = [sortedCandidates[i][0] for i in range(len(sortedCandidates))]
+        return recommendation[0:topN]

@@ -9,7 +9,7 @@ def LeaveOneOutValidation(pathData, recommender, topN = 10):
     trainSet, testSet = tool.LeaveOneOutSplit(pathData)
     
     # File path
-    curDir = os.path.dirname(os.path.abspath(pathData)) + "/"
+    curDir = os.path.dirname(os.path.abspath(pathData)) + "\\"
     basename = os.path.basename(pathData)
     pathModel = curDir + os.path.splitext(basename)[0] + "_" + recommender.title + "_model.pickle"
     
@@ -44,7 +44,7 @@ def LeaveOneOutValidation(pathData, recommender, topN = 10):
     return precision, recall, hitrate
     
 if __name__ == "__main__":
-    pathData = "/home2/test/movielens.dat"
+    pathData = "C:\\GitHub\\Data\\MovieLens\\movielens.dat"
     
     ubcf = UserBased(50)
     LeaveOneOutValidation(pathData, ubcf, 10)
