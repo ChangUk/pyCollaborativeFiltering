@@ -2,6 +2,7 @@ from math import sqrt
 
 import numpy as np
 
+
 def cosine(dataA, dataB):
     if type(dataA) is list and type(dataB) is list:
         if len(dataA) != len(dataB):

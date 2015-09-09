@@ -19,8 +19,8 @@ UserID \t ItemID \t Count \n
 >>> import tool
 >>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
 >>> from recommender import ItemBased
->>> ibcf = ItemBased()
->>> model = ibcf.buildModel(trainSet, nNeighbors=20)
+>>> ibcf = ItemBased(trainSet)
+>>> model = ibcf.buildModel(nNeighbors=20)
 >>> for user in testSet.keys():
 ...     recommendation = ibcf.Recommendation(model, user, topN=10)
 ```
@@ -30,12 +30,12 @@ UserID \t ItemID \t Count \n
 >>> trainSet = tool.loadData("/home2/movielens/u1.base")
 >>> testSet = tool.loadData("/home2/movielens/u1.test")
 >>> from recommender import UserBased
->>> ubcf = UserBased()
->>> model = ubcf.buildModel(trainSet, nNeighbors=30)
->>> import evaluation
->>> precision, recall, hitrate = evaluation.evaluation(ubcf, model, testSet, topN=10)
->>> print((precision, recall, hitrate))
-(0.05163398692810463, 0.010009830619733972, 0.5163398692810458)
+>>> ubcf = UserBased(trainSet)
+>>> model = ubcf.buildModel(nNeighbors=30)
+>>> import validation
+>>> result = validation.evaluateRecommender(ubcf, model, testSet, topN=10)
+>>> print(result)
+{'precision': 0.05163398692810464, 'recall': 0.01000983061973397, 'hitrate': 0.5163398692810458}
 ```
 
 ## References
