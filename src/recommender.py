@@ -125,8 +125,8 @@ class ItemBased(CollaborativeFiltering):
     def __init__(self):
         print("Item-based Collaborative Filtering")
         self.title = "ibcf"
-        self.prefs = {}             # Training data format: {user: {item: rating, ...}, ...}
-        self.prefsOnUser = {}       # Transposed data format: {item: {user: rating, ...}, ...}
+        self.prefs = {}             # Training data format: {item: {user: rating, ...}, ...}
+        self.prefsOnUser = {}       # Transposed data format: {user: {item: rating, ...}, ...}
         self.itemList = []
         
     def loadData(self, data):
