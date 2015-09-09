@@ -34,7 +34,7 @@ UserID \t ItemID \t Count \n
 >>> ibcf = ItemBased()
 >>> model = ibcf.loadExtModel("/home2/movielens/movielens_ibcf20model.pickle")
 >>> if model == None:
-...     model = ibcf.buildModel(nNeighbors=30)
+...     model = ibcf.buildModel(nNeighbors=20)
 >>> import evaluation
 >>> precision, recall = evaluation.evaluation(ibcf, model, trainSet, testSet, topN=10)
 >>> precision
