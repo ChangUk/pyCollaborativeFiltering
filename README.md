@@ -17,10 +17,10 @@ UserID \t ItemID \t Count \n
 ```python
 >>> import tool
 >>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
->>> from recommender import ItemBased, UserBased
+>>> from recommender import UserBased
 >>> ubcf = UserBased()
 >>> ubcf.loadData(trainSet)
->>> model = ubcf.loadExtModel("/home2/movielens/movielens_ubcf_model.pickle")
+>>> model = ubcf.loadExtModel("/home2/movielens/movielens_ubcf30model.pickle")
 >>> if model == None:
 ...     model = ubcf.buildModel(nNeighbors=30)
 >>> for user in testSet.keys():
@@ -28,10 +28,19 @@ UserID \t ItemID \t Count \n
 ```
 ### Evaluation
 ```python
->>> import evaluation
+>>> import tool
+>>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
+>>> from recommender import ItemBased
 >>> ibcf = ItemBased()
->>> evaluation.evaluation(ibcf, trainSet, testSet, topN=10, nNeighbors=20)
-0.026511134676564248, 0.2651113467656416
+>>> model = ibcf.loadExtModel("/home2/movielens/movielens_ibcf20model.pickle")
+>>> if model == None:
+...     model = ibcf.buildModel(nNeighbors=30)
+>>> import evaluation
+>>> precision, recall = evaluation.evaluation(ibcf, model, trainSet, testSet, topN=10)
+>>> precision
+0.026511134676564248
+>>> recall
+0.2651113467656416
 ```
 
 ## References

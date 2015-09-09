@@ -10,7 +10,7 @@ def LeaveOneOutValidation(recommender, pathData, topN = 10, nNeighbors = 20):
     # File path
     curDir = os.path.dirname(os.path.abspath(pathData)) + "/"
     basename = os.path.basename(pathData)
-    pathModel = curDir + os.path.splitext(basename)[0] + "_" + recommender.title + "_model.pickle"
+    pathModel = curDir + os.path.splitext(basename)[0] + "_" + recommender.title + str(nNeighbors) + "model.pickle"
     
     # Build or load recommendation model
     recommender.loadData(trainSet)
@@ -39,10 +39,9 @@ def LeaveOneOutValidation(recommender, pathData, topN = 10, nNeighbors = 20):
     print("\t* HitRate: " + str(hitrate))
     return precision, recall, hitrate
 
-def evaluation(recommender, trainSet, testSet, topN = 10, nNeighbors = 20):
+def evaluation(recommender, model, trainSet, testSet, topN = 10):
     # Build or load recommendation model
     recommender.loadData(trainSet)
-    model = recommender.buildModel(nNeighbors)
     
     print("Recommender Evaluation...")
     precision = 0
