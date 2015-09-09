@@ -1,5 +1,6 @@
 import pickle
 
+import evaluation
 import numpy as np
 import similarity
 import tool
@@ -195,4 +196,3 @@ class ItemBased(CollaborativeFiltering):
         sortedCandidates = sorted(predictedScores.items(), key=lambda x: x[1], reverse=True)
         recommendation = [sortedCandidates[i][0] for i in range(len(sortedCandidates))]
         return recommendation[0:topN]
-    

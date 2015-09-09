@@ -39,10 +39,7 @@ def LeaveOneOutValidation(recommender, pathData, topN = 10, nNeighbors = 20):
     print("\t* HitRate: " + str(hitrate))
     return precision, recall, hitrate
 
-def evaluation(recommender, model, trainSet, testSet, topN = 10):
-    # Build or load recommendation model
-    recommender.loadData(trainSet)
-    
+def evaluation(recommender, model, testSet, topN = 10):
     print("Recommender Evaluation...")
     precision = 0
     recall = 0
@@ -62,4 +59,4 @@ def evaluation(recommender, model, trainSet, testSet, topN = 10):
     print("\t* Precision: " + str(precision))
     print("\t* Recall: " + str(recall))
     print("\t* HitRate: " + str(hitrate))
-    return precision, recall
+    return precision, recall, hitrate

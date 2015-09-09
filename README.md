@@ -32,14 +32,17 @@ UserID \t ItemID \t Count \n
 >>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
 >>> from recommender import ItemBased
 >>> ibcf = ItemBased()
+>>> ibcf.loadData(trainSet)
 >>> model = ibcf.loadExtModel("/home2/movielens/movielens_ibcf20model.pickle")
 >>> if model == None:
 ...     model = ibcf.buildModel(nNeighbors=20)
 >>> import evaluation
->>> precision, recall = evaluation.evaluation(ibcf, model, trainSet, testSet, topN=10)
+>>> precision, recall, hitrate = evaluation.evaluation(ibcf, model, testSet, topN=10)
 >>> precision
 0.026511134676564248
 >>> recall
+0.2651113467656416
+>>> hitrate
 0.2651113467656416
 ```
 
