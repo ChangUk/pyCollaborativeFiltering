@@ -28,6 +28,36 @@ def cosine(dataA, dataB):
     else:
         print("Error: input data type is invalid.")
         return -1
+
+def cosineForInterSet(dataA, dataB):
+    if type(dataA) is list and type(dataB) is list:
+        if len(dataA) != len(dataB):
+            print("Error: the length of two input lists are not same.")
+            return -1
+        interSet = [i for i in range(len(dataA)) if dataA[i] * dataB[i] != 0]
+        if len(interSet) == 0:
+            return 0
+        AB = sum([dataA[i] * dataB[i] for i in range(interSet)])
+        normA = sqrt(sum([dataA[i] ** 2 for i in range(interSet)]))
+        normB = sqrt(sum([dataB[i] ** 2 for i in range(interSet)]))
+        denominator = normA * normB
+        if denominator == 0:
+            return 0
+        return AB / denominator
+    elif type(dataA) is dict and type(dataB) is dict:
+        interSet = [obj for obj in dataA if obj in dataB]
+        if len(interSet) == 0:
+            return 0
+        AB = sum([dataA[obj] * dataB[obj] for obj in interSet])
+        normA = sqrt(sum([dataA[obj] ** 2 for obj in interSet]))
+        normB = sqrt(sum([dataB[obj] ** 2 for obj in interSet]))
+        denominator = normA * normB
+        if denominator == 0:
+            return -1
+        return AB / denominator
+    else:
+        print("Error: input data type is invalid.")
+        return -1
     
 def pearson(dataA, dataB):
     if type(dataA) is list and type(dataB) is list:

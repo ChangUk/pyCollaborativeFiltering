@@ -1,49 +1,42 @@
 # pyCollaborativeFiltering
 User-based and Item-based Collaborative Filtering algorithms written in Python
 
-## Specification of user-based method
-* User-user similarity does not include neighbors whose similarity is zero or lower value.
-* The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
-
 ## Develop enviroment
 * Language: Python3
 * Prerequisite libraries: [Numpy](http://numpy.org)
 
+## Specification of user-based method
+* User-user similarity does not include neighbors whose similarity is zero or lower value.
+* The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
+* The algorithm uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable by setting parameter.)
+
 ## Input data format
 UserID \t ItemID \t Count \n
+(or UserID \t ItemID \t Count \t Date \n)
 
 ## Usage example
 ### Recommendation
 ```python
 >>> import tool
 >>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
->>> from recommender import UserBased
->>> ubcf = UserBased()
->>> ubcf.loadData(trainSet)
->>> model = ubcf.loadExtModel("/home2/movielens/movielens_ubcf30model.pickle")
->>> if model == None:
-...     model = ubcf.buildModel(nNeighbors=30)
+>>> from recommender import ItemBased
+>>> ibcf = ItemBased()
+>>> model = ibcf.buildModel(trainSet, nNeighbors=20)
 >>> for user in testSet.keys():
-...     recommendation = ubcf.Recommendation(model, user, topN=10)
+...     recommendation = ibcf.Recommendation(model, user, topN=10)
 ```
 ### Evaluation
 ```python
 >>> import tool
->>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
->>> from recommender import ItemBased
->>> ibcf = ItemBased()
->>> ibcf.loadData(trainSet)
->>> model = ibcf.loadExtModel("/home2/movielens/movielens_ibcf20model.pickle")
->>> if model == None:
-...     model = ibcf.buildModel(nNeighbors=20)
+>>> trainSet = tool.loadData("/home2/movielens/u1.base")
+>>> testSet = tool.loadData("/home2/movielens/u1.test")
+>>> from recommender import UserBased
+>>> ubcf = UserBased()
+>>> model = ubcf.buildModel(trainSet, nNeighbors=30)
 >>> import evaluation
->>> precision, recall, hitrate = evaluation.evaluation(ibcf, model, testSet, topN=10)
->>> precision
-0.026511134676564248
->>> recall
-0.2651113467656416
->>> hitrate
-0.2651113467656416
+>>> precision, recall, hitrate = evaluation.evaluation(ubcf, model, testSet, topN=10)
+>>> print((precision, recall, hitrate))
+(0.05163398692810463, 0.010009830619733972, 0.5163398692810458)
 ```
 
 ## References

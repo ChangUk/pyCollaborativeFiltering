@@ -28,7 +28,6 @@ def loadData(filePath, inv = False):
             file.close()
     except IOError as e:
         print(e)
-        return None
     return data
 
 def LeaveOneOutSplit(pathData):
