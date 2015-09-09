@@ -8,11 +8,10 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 ## Specification of user-based method
 * User-user similarity does not include neighbors whose similarity is zero or lower value.
 * The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
-* The algorithm uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable by setting parameter.)
+* The algorithm basically uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable by setting parameter.)
 
 ## Input data format
 UserID \t ItemID \t Count \n
-(or UserID \t ItemID \t Count \t Date \n)
 
 ## Usage example
 ### Recommendation
