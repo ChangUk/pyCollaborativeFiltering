@@ -43,8 +43,7 @@ class CrossValidation(object):
                 testSet = {}
                 testSet.setdefault(user, {})
                 testSet[user][heldOutRecord[0]] = float(trainSet[user].pop(heldOutRecord[0]))
-                print(testSet)
-                
+                 
 #                 model = recommender.buildModel(similarityMeasure, nNeighbors)
                 model = (similarityMeasure, nNeighbors)
                 evaluation = evaluateRecommender(recommender, model, testSet, topN)
@@ -54,16 +53,9 @@ class CrossValidation(object):
                 hitrate += evaluation["hitrate"]
                 nTrials += 1
                 
-                print("The result:")
-                print("\t* Precision: " + str(precision / nTrials))
-                print("\t* Recall: " + str(recall / nTrials))
-                print("\t* HitRate: " + str(hitrate / nTrials))
-                
                 del(trainSet)
                 del(testSet)
                 del(model)
-                
-                print(nTrials)
         
         # Find final results
         result = {}
