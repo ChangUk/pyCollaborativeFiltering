@@ -18,14 +18,6 @@ class CollaborativeFiltering:
                     subjList.append(subj)
         return subjList
     
-    def getNearestNeighbors(self, obj, simMeasure = similarity.cosine, nNeighbors = 20):
-        nearestNeighbors = {}
-        similarities = [(simMeasure(self.prefs[obj], self.prefs[other]), other) for other in self.prefs if obj != other]
-        similarities.sort(reverse = True)
-        for similarity, neighbor in similarities[0:nNeighbors]:
-            nearestNeighbors[neighbor] = similarity
-        return nearestNeighbors
-    
     def loadExtModel(self, pathDump):
         print("Loading external model...")
         try:
@@ -59,7 +51,15 @@ class UserBased(CollaborativeFiltering):
         elif type(data) is str:         # If 'data' is a file path of training data
             self.prefs = tool.loadData(data)
         self.itemList = self.getSubjectList(self.prefs)
-        
+    
+    def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosineForInterSet, nNeighbors = 50):
+        nearestNeighbors = {}
+        similarities = [(simMeasure(self.prefs[targetUser], self.prefs[user]), user) for user in self.prefs if targetUser != user]
+        similarities.sort(reverse = True)
+        for similarity, neighbor in similarities[0:nNeighbors]:
+            nearestNeighbors[neighbor] = similarity
+        return nearestNeighbors
+    
     def buildModel(self, simMeasure = similarity.cosineForInterSet, nNeighbors = 50, pathDump = None):
         # Model contains top-K similar users for each user and their similarities.
         # Model format: {user: {neighbor: similarity, ...}, ...}
@@ -95,7 +95,6 @@ class UserBased(CollaborativeFiltering):
                 continue
             meanRatingOfNeighbor = np.mean([r for r in self.prefs[neighbor].values()])
             weightedSum += similarity * (self.prefs[neighbor][item] - meanRatingOfNeighbor)
-            weightedSum += similarity * self.prefs[neighbor][item]
             normalizingFactor += np.abs(similarity)
         
         if normalizingFactor == 0:
@@ -123,6 +122,14 @@ class ItemBased(CollaborativeFiltering):
             self.prefsOnUser = tool.loadData(data)
             self.prefs = tool.transposePrefs(self.prefsOnUser)
         self.itemList = self.prefs.keys()
+    
+    def getNearestNeighbors(self, targetItem, simMeasure = similarity.cosine, nNeighbors = 20):
+        nearestNeighbors = {}
+        similarities = [(simMeasure(self.prefs[targetItem], self.prefs[item]), item) for item in self.prefs if targetItem != item]
+        similarities.sort(reverse = True)
+        for similarity, neighbor in similarities[0:nNeighbors]:
+            nearestNeighbors[neighbor] = similarity
+        return nearestNeighbors
     
     def buildModel(self, simMeasure = similarity.cosine, nNeighbors = 20, pathDump = None):
         '''

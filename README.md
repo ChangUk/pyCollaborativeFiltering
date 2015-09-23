@@ -35,7 +35,7 @@ UserID \t ItemID \t Count \n
 >>> import validation
 >>> result = validation.evaluateRecommender(ubcf, model, testSet, topN=10)
 >>> print(result)
-{'precision': 0.05163398692810464, 'recall': 0.01000983061973397, 'hitrate': 0.5163398692810458}
+{'precision': 0.050980392156862, 'recall': 0.009698538130460, 'hitrate': 0.5098039215686}
 ```
 
 ## References
