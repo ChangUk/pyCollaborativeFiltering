@@ -6,9 +6,10 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 * Prerequisite libraries: [Numpy](http://numpy.org)
 
 ## Specification of user-based method
-* User-user similarity does not include neighbors whose similarity is zero or lower value.
+* Main difference from the original CF method is that when calculating the predicted score on the item the task finding nearest neighbors of target user precedes the work looking for users who rated the item.
+* User-user similarity does not include those of neighbors whose similarity is zero or lower value.
 * The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
-* The algorithm basically uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable by setting parameter.)
+* The algorithm basically uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable.)
 
 ## Input data format
 UserID \t ItemID \t Count \n
