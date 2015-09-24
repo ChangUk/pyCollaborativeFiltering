@@ -10,10 +10,10 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 * User-user similarity does not include those of neighbors whose similarity is zero or lower value.
 * The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
 * The algorithm basically uses the cosine similarity considering only co-rated items. (Another measure such as Pearson is also applicable.)
-* Support binary type(rated or not) of rating data.
+* Support binary type(rated or not) of rating data.  In this case, the similarity average of the nearest neighbors who rated the item is used as a predicted score of the item.
 
 ## Input data format
-UserID \t ItemID \t Count \n
+`UserID \t ItemID \t Count \n`
 
 ## Usage example
 ### Recommendation
@@ -41,5 +41,6 @@ UserID \t ItemID \t Count \n
 ```
 
 ## References
-* An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)
-* Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)
+* [An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)](http://files.grouplens.org/papers/algs.pdf)
+* [Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)](http://glaros.dtc.umn.edu/gkhome/fetch/papers/itemrsTOIS04.pdf)
+* [https://en.wikipedia.org/wiki/Collaborative_filtering](https://en.wikipedia.org/wiki/Collaborative_filtering)
