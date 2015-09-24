@@ -9,14 +9,6 @@ from builtins import isinstance
 class CollaborativeFiltering:
     def __init__(self):
         self.prefs = {}
-        
-    def getSubjectList(self, data):
-        subjList = []
-        for obj in data:
-            for subj in data[obj]:
-                if subj not in subjList:
-                    subjList.append(subj)
-        return subjList
     
     def loadExtModel(self, pathDump):
         print("Loading external model...")
@@ -46,21 +38,26 @@ class UserBased(CollaborativeFiltering):
     def __init__(self, data):
         CollaborativeFiltering.__init__(self)
         print("User-based Collaborative Filtering")
-        if type(data) is dict:          # If 'data' is preferences on users for training
+        if isinstance(data, dict):          # If 'data' is preferences on users for training
             self.prefs = data
-        elif type(data) is str:         # If 'data' is a file path of training data
+        elif isinstance(data, str):         # If 'data' is a file path of training data
             self.prefs = tool.loadData(data)
-        self.itemList = self.getSubjectList(self.prefs)
+        self.itemList = {}
+        for itemList in self.prefs.values():
+            for item in itemList:
+                self.itemList[item] = None
     
-    def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosineForInterSet, nNeighbors = 50):
+    def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosine_intersection, nNeighbors = 50, useOnlyPositives = True):
         nearestNeighbors = {}
         similarities = [(simMeasure(self.prefs[targetUser], self.prefs[user]), user) for user in self.prefs if targetUser != user]
         similarities.sort(reverse = True)
         for similarity, neighbor in similarities[0:nNeighbors]:
+            if useOnlyPositives == True and similarity <= 0:
+                continue
             nearestNeighbors[neighbor] = similarity
         return nearestNeighbors
     
-    def buildModel(self, simMeasure = similarity.cosineForInterSet, nNeighbors = 50, pathDump = None):
+    def buildModel(self, simMeasure = similarity.cosine_intersection, nNeighbors = 50, pathDump = None):
         # Model contains top-K similar users for each user and their similarities.
         # Model format: {user: {neighbor: similarity, ...}, ...}
         model = self.loadExtModel(pathDump)
@@ -72,37 +69,45 @@ class UserBased(CollaborativeFiltering):
         for user in self.prefs:
             model[user] = self.getNearestNeighbors(user, simMeasure, nNeighbors)
             
-        if pathDump != None and type(pathDump) is str:
+        if isinstance(pathDump, str):
             self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
     
-    def getPredictedRating(self, model, user, item):
-        if item in self.prefs[user]:
-            return self.prefs[user][item]
-        meanRating = np.mean([r for r in self.prefs[user].values()])
-        weightedSum = 0
-        normalizingFactor = 0
-        
-        if isinstance(model, dict):
+    def getPredictedRating(self, user, item, nearestNeighbors, binaryMode = False):
+        if binaryMode == True:
+            if item in self.prefs[user]:
+                return 1.0
+            similarities = [similarity for neighbor, similarity in nearestNeighbors.items() if item in self.prefs[neighbor]]
+            if len(similarities) == 0:
+                return 0.0
+            return np.mean(similarities)
+        else:
+            if item in self.prefs[user]:
+                return self.prefs[user][item]
+            meanRating = np.mean([r for r in self.prefs[user].values()])
+            weightedSum = 0
+            normalizingFactor = 0
+            for neighbor, similarity in nearestNeighbors.items():
+                if item not in self.prefs[neighbor]:
+                    continue
+                meanRatingOfNeighbor = np.mean([r for r in self.prefs[neighbor].values()])
+                weightedSum += similarity * (self.prefs[neighbor][item] - meanRatingOfNeighbor)
+                normalizingFactor += np.abs(similarity)
+            if normalizingFactor == 0:
+                return 0
+            return meanRating + (weightedSum / normalizingFactor)
+    
+    def Recommendation(self, model, user, topN = 10, binaryMode = False, useOnlyPositives = True):
+        if isinstance(model, dict):         # model = {user: {neighbor: similarity, ...}, ...}
             nearestNeighbors = model[user]
         elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
-            nearestNeighbors = self.getNearestNeighbors(user, model[0], model[1])
-            
-        for neighbor in nearestNeighbors:
-            similarity = nearestNeighbors[neighbor]
-            if similarity <= 0 or item not in self.prefs[neighbor]:
-                continue
-            meanRatingOfNeighbor = np.mean([r for r in self.prefs[neighbor].values()])
-            weightedSum += similarity * (self.prefs[neighbor][item] - meanRatingOfNeighbor)
-            normalizingFactor += np.abs(similarity)
+            nearestNeighbors = self.getNearestNeighbors(user, model[0], model[1], useOnlyPositives)
+        else:
+            return []
         
-        if normalizingFactor == 0:
-            return 0
-        return meanRating + (weightedSum / normalizingFactor)
-    
-    def Recommendation(self, model, user, topN = 10):
-        predictedScores = [(self.getPredictedRating(model, user, item), item) for item in self.itemList if item not in self.prefs[user]]
+        predictedScores = [(self.getPredictedRating(user, item, nearestNeighbors, binaryMode), item)
+                           for item in self.itemList if item not in self.prefs[user]]
         predictedScores.sort(reverse = True)
         recommendation = [item for similarity, item in predictedScores[0:topN]]
         return recommendation

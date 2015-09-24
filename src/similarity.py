@@ -30,7 +30,7 @@ def cosine(dataA, dataB):
         print("Error: input data type is invalid.")
         return -1
 
-def cosineForInterSet(dataA, dataB):
+def cosine_intersection(dataA, dataB):
     if type(dataA) is list and type(dataB) is list:
         if len(dataA) != len(dataB):
             print("Error: the length of two input lists are not same.")
@@ -66,33 +66,33 @@ def pearson(dataA, dataB):
             print("Error: the length of two input lists are not same.")
             return -1
         length = len(dataA)
-        interSet = [i for i in range(length) if dataA[i] != 0 and dataB[i] != 0]    # Contains indices of co-rated items
-        if len(interSet) == 0:
+        intersection = [i for i in range(length) if dataA[i] != 0 and dataB[i] != 0]    # Contains indices of co-rated items
+        if len(intersection) == 0:
             return 0
         meanA = np.mean([dataA[i] for i in range(length) if dataA[i] != 0])
         meanB = np.mean([dataB[i] for i in range(length) if dataB[i] != 0])
-        numerator = sum([(dataA[i] - meanA) * (dataB[i] - meanB) for i in interSet])
-        deviationA = sqrt(sum([(dataA[i] - meanA) ** 2 for i in interSet]))
-        deviationB = sqrt(sum([(dataB[i] - meanB) ** 2 for i in interSet]))
+        numerator = sum([(dataA[i] - meanA) * (dataB[i] - meanB) for i in intersection])
+        deviationA = sqrt(sum([(dataA[i] - meanA) ** 2 for i in intersection]))
+        deviationB = sqrt(sum([(dataB[i] - meanB) ** 2 for i in intersection]))
         if (deviationA * deviationB) == 0:
             return 0
         return numerator / (deviationA * deviationB)
     elif type(dataA) is dict and type(dataB) is dict:
-        interSet = [obj for obj in dataA if obj in dataB]
-        if len(interSet) == 0:
+        intersection = [obj for obj in dataA if obj in dataB]
+        if len(intersection) == 0:
             return 0
         meanA = np.mean([dataA[obj] for obj in dataA.keys()])
         meanB = np.mean([dataB[obj] for obj in dataB.keys()])
-        numerator = sum([(dataA[obj] - meanA) * (dataB[obj] - meanB) for obj in interSet])
-        deviationA = sqrt(sum([(dataA[obj] - meanA) ** 2 for obj in interSet]))
-        deviationB = sqrt(sum([(dataB[obj] - meanB) ** 2 for obj in interSet]))
+        numerator = sum([(dataA[obj] - meanA) * (dataB[obj] - meanB) for obj in intersection])
+        deviationA = sqrt(sum([(dataA[obj] - meanA) ** 2 for obj in intersection]))
+        deviationB = sqrt(sum([(dataB[obj] - meanB) ** 2 for obj in intersection]))
         if (deviationA * deviationB) == 0:
             return 0
         correlation = numerator / (deviationA * deviationB)
         
         # Correlation significance weighting
-        if len(interSet) < 50:
-            correlation *= (len(interSet) / 50)
+        if len(intersection) < 50:
+            correlation *= (len(intersection) / 50)
         
         return correlation
     else:
@@ -101,8 +101,8 @@ def pearson(dataA, dataB):
     
 def jaccard(dataA, dataB):
     # Jaccard similarity is applicable to both list type and dictionary type.
-    interSet = sum([1 for obj in dataA if obj in dataB])
-    unionSet = len(dataA) + len(dataB) - interSet
-    if unionSet == 0:
+    nIntersection = sum([1 for obj in dataA if obj in dataB])
+    nUnion = len(dataA) + len(dataB) - nIntersection
+    if nUnion == 0:
         return -1
-    return interSet / unionSet
+    return nIntersection / nUnion

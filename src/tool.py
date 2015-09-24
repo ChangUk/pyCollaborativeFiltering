@@ -13,11 +13,18 @@ def loadData(filePath, inv = False):
             for line in file:
                 line = line.replace("\n", "")
                 tokens = line.split("\t")
-                if len(tokens) < 2: continue
+                if len(tokens) < 2:
+                    continue
+                
+                # Get values from tokens
                 user = tokens[0]
                 item = tokens[1]
                 if len(tokens) > 2:
                     rating = tokens[2]
+                else:
+                    rating = 1
+                
+                # Store data
                 if inv == False:
                     data.setdefault(user, {})
                     data[user][item] = float(rating)

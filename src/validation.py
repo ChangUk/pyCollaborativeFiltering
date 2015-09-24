@@ -3,7 +3,7 @@ from copy import deepcopy
 import similarity
 
 
-def evaluateRecommender(recommender, model, testSet, topN = 10):
+def evaluateRecommender(recommender, model, testSet, topN = 10, binaryMode = False, useOnlyPositives = True):
     # Evaluation metrics
     precision = 0
     recall = 0
@@ -11,7 +11,7 @@ def evaluateRecommender(recommender, model, testSet, topN = 10):
     
     nTrials = 0
     for user in testSet:
-        recommendation = recommender.Recommendation(model, user, topN)
+        recommendation = recommender.Recommendation(model, user, topN, binaryMode, useOnlyPositives)
         hit = sum([1 for item in testSet[user] if item in recommendation])
         precision += hit / topN
         recall += hit / len(testSet[user])
@@ -26,7 +26,7 @@ def evaluateRecommender(recommender, model, testSet, topN = 10):
     return result
 
 class CrossValidation(object):
-    def LeaveOneOut(self, recommender, similarityMeasure = similarity.cosineForInterSet, topN = 10, nNeighbors = 20):
+    def LeaveOneOut(self, recommender, similarityMeasure = similarity.cosine_intersection, topN = 10, nNeighbors = 20):
         # Evaluation metrics
         precision = 0
         recall = 0
