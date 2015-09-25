@@ -1,6 +1,5 @@
 from copy import deepcopy
-
-import similarity
+from datetime import datetime
 
 
 def evaluateRecommender(testSet, recommender, model, topN = 10, binaryMode = False, useOnlyPositives = True):
@@ -10,30 +9,85 @@ def evaluateRecommender(testSet, recommender, model, topN = 10, binaryMode = Fal
     totalF1score = 0
     totalHit = 0
     
-    nTrials = 0
     for user in testSet:
-        recommendation = recommender.Recommendation(model, user, topN, binaryMode, useOnlyPositives)
+        recommendation = recommender.Recommendation(user, model, topN, binaryMode, useOnlyPositives)
         hit = sum([1 for item in testSet[user] if item in recommendation])
         precision = hit / topN
         recall = hit / len(testSet[user])
-        f1score = 2 * precision * recall / (precision + recall) 
+        f1score = 0 if hit == 0 else 2 * precision * recall / (precision + recall)
         
         totalPrecision += precision
         totalRecall += recall
         totalF1score += f1score
         totalHit += hit
-        nTrials += 1
     
     # Find final results
     result = {}
-    result["Precision"] = totalPrecision / nTrials
-    result["Recall"] = totalRecall / nTrials
-    result["F1-score"] = totalF1score / nTrials
-    result["Hit-rate"] = totalHit / nTrials
+    result["Precision"] = totalPrecision / len(testSet)
+    result["Recall"] = totalRecall / len(testSet)
+    result["F1-score"] = totalF1score / len(testSet)
+    result["Hit-rate"] = totalHit / len(testSet)
     return result
 
 class CrossValidation(object):
-    def LeaveOneOut(self, recommender, similarityMeasure = similarity.cosine_intersection, topN = 10, nNeighbors = 20):
+    def KFoldSplit(self, data, fold, nFolds):           # data = {user: {item: rating, ...}, ...}
+        trainSet = deepcopy(data)
+        testSet = {}
+        for user in data:
+            testSet.setdefault(user, {})
+            unitLength = int(len(data[user]) / nFolds)  # data[user] = {item: rating, ...}
+            lowerbound = unitLength * fold
+            upperbound = unitLength * (fold + 1) if fold < nFolds - 1 else len(data[user])
+            testItems = {}
+            for i, item in enumerate(data[user]):
+                if lowerbound <= i and i < upperbound:
+                    testItems[item] = float(trainSet[user].pop(item))
+            testSet[user] = testItems
+        return trainSet, testSet
+    
+    def KFold(self, data, recommender, model, topN = 10, nFolds = 5):
+        start_time = datetime.now()
+        
+        # Evaluation metrics
+        totalPrecision = 0
+        totalRecall = 0
+        totalF1score = 0
+        totalHitrate = 0
+        
+        for fold in range(nFolds):
+            trainSet, testSet = self.KFoldSplit(data, fold, nFolds)
+            recommender.loadData(trainSet)
+            evaluation = evaluateRecommender(testSet, recommender, model, topN)
+                
+            totalPrecision += evaluation["Precision"]
+            totalRecall += evaluation["Recall"]
+            totalF1score += evaluation["F1-score"]
+            totalHitrate += evaluation["Hit-rate"]
+            
+            del(trainSet)
+            del(testSet)
+        
+        # Find final results
+        result = {}
+        result["Precision"] = totalPrecision / nFolds
+        result["Recall"] = totalRecall / nFolds
+        result["F1-score"] = totalF1score / nFolds
+        result["Hit-rate"] = totalHitrate / nFolds
+        
+        print("Execution time: {}".format(datetime.now() - start_time))
+        return result
+    
+    def LeaveKOutSplit(self, data, user, items):        # `user` should have rating scores on `items` in `data`
+        trainSet = deepcopy(data)                       # To prevent original input data from being modified
+        testSet = {}
+        testSet.setdefault(user, {})
+        for item in items:
+            testSet[user][item] = float(trainSet[user].pop(item))
+        return trainSet, testSet
+    
+    def LeaveOneOut(self, data, recommender, model, topN = 10):
+        start_time = datetime.now()
+        
         # Evaluation metrics
         totalPrecision = 0
         totalRecall = 0
@@ -41,19 +95,10 @@ class CrossValidation(object):
         totalHitrate = 0
         
         nTrials = 0
-        for user in recommender.prefs.keys():
-            # The number of subjects for each object is more than 1 at least in order to leave one out.
-            if len(recommender.prefs[user]) <= 1:
-                continue
-            
-            for heldOutRecord in recommender.prefs[user].items():
-                # Make training set and test set
-                trainSet = deepcopy(recommender.prefs)
-                testSet = {}
-                testSet.setdefault(user, {})
-                testSet[user][heldOutRecord[0]] = float(trainSet[user].pop(heldOutRecord[0]))
-                
-                model = (similarityMeasure, nNeighbors)
+        for user in data:
+            for item in data[user]:
+                trainSet, testSet = self.LeaveKOutSplit(data, user, [item])
+                recommender.loadData(trainSet)
                 evaluation = evaluateRecommender(testSet, recommender, model, topN)
                 
                 totalPrecision += evaluation["Precision"]
@@ -64,7 +109,6 @@ class CrossValidation(object):
                 
                 del(trainSet)
                 del(testSet)
-                del(model)
         
         # Find final results
         result = {}
@@ -72,4 +116,6 @@ class CrossValidation(object):
         result["Recall"] = totalRecall / nTrials
         result["F1-score"] = totalF1score / nTrials
         result["Hit-rate"] = totalHitrate / nTrials
+        
+        print("Execution time: {}".format(datetime.now() - start_time))
         return result

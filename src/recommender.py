@@ -1,14 +1,27 @@
+import abc
+from builtins import isinstance
 import pickle
 
 import numpy as np
 import similarity
 import tool
-from builtins import isinstance
 
 
-class CollaborativeFiltering:
+class CollaborativeFiltering(object):
+    __metaclass__ = abc.ABCMeta
+    
     def __init__(self):
         self.prefs = {}
+    
+    @classmethod
+    @abc.abstractmethod
+    def buildModel(cls):
+        raise NotImplementedError
+    
+    @classmethod
+    @abc.abstractmethod
+    def Recommendation(cls):
+        raise NotImplementedError
     
     def loadExtModel(self, pathDump):
         print("Loading external model...")
@@ -35,18 +48,16 @@ class UserBased(CollaborativeFiltering):
     For more details, reference the following paper:
     An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)
     '''
-    def __init__(self, data):
-        CollaborativeFiltering.__init__(self)
+    def __init__(self):
+        super().__init__()
         print("User-based Collaborative Filtering")
+        
+    def loadData(self, data):
         if isinstance(data, dict):          # If 'data' is preferences on users for training
             self.prefs = data
         elif isinstance(data, str):         # If 'data' is a file path of training data
             self.prefs = tool.loadData(data)
-        self.itemList = {}
-        for itemList in self.prefs.values():
-            for item in itemList:
-                self.itemList[item] = None
-    
+                
     def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosine_intersection, nNeighbors = 50, useOnlyPositives = True):
         nearestNeighbors = {}
         similarities = [(simMeasure(self.prefs[targetUser], self.prefs[user]), user) for user in self.prefs if targetUser != user]
@@ -98,7 +109,7 @@ class UserBased(CollaborativeFiltering):
                 return 0
             return meanRating + (weightedSum / normalizingFactor)
     
-    def Recommendation(self, model, user, topN = 10, binaryMode = False, useOnlyPositives = True):
+    def Recommendation(self, user, model, topN = 10, binaryMode = False, useOnlyPositives = True):
         if isinstance(model, dict):         # model = {user: {neighbor: similarity, ...}, ...}
             nearestNeighbors = model[user]
         elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
@@ -106,8 +117,14 @@ class UserBased(CollaborativeFiltering):
         else:
             return []
         
+        # Get list of candidate items to be recommended
+        candidateItems = {}
+        for neighbor in nearestNeighbors:
+            for item in self.prefs[neighbor]:
+                candidateItems[item] = None
+        
         predictedScores = [(self.getPredictedRating(user, item, nearestNeighbors, binaryMode), item)
-                           for item in self.itemList if item not in self.prefs[user]]
+                           for item in candidateItems if item not in self.prefs[user]]
         predictedScores.sort(reverse = True)
         recommendation = [item for similarity, item in predictedScores[0:topN]]
         return recommendation
@@ -117,13 +134,15 @@ class ItemBased(CollaborativeFiltering):
     For more details, reference the following paper:
     Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)
     '''
-    def __init__(self, data):
-        CollaborativeFiltering.__init__(self)
+    def __init__(self):
+        super().__init__()
         print("Item-based Collaborative Filtering")
-        if type(data) is dict:          # If 'data' is preferences on users for training
+        
+    def loadData(self, data):
+        if isinstance(data, dict):          # If 'data' is preferences on users for training
             self.prefsOnUser = data
             self.prefs = tool.transposePrefs(self.prefsOnUser)
-        elif type(data) is str:         # If 'data' is a file path of training data
+        elif isinstance(data, str):         # If 'data' is a file path of training data
             self.prefsOnUser = tool.loadData(data)
             self.prefs = tool.transposePrefs(self.prefsOnUser)
         self.itemList = self.prefs.keys()
@@ -166,7 +185,7 @@ class ItemBased(CollaborativeFiltering):
         print("\tComplete!")
         return model
     
-    def Recommendation(self, model, user, topN = 10):
+    def Recommendation(self, user, model, topN = 10, binaryMode = None, useOnlyPositives = None):
         '''
         Pseudo code:
         ApplyModel(M, U, N):

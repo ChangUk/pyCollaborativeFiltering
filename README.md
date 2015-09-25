@@ -14,7 +14,7 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 * Support binary type(rated or not) of rating data.  In this case, the similarity average of the nearest neighbors who rated the item is used as a predicted score of the item.
 
 ## Input data format
-`UserID \t ItemID \t Count \n`
+`UserID \t ItemID \t Rating \n`
 
 ## Usage example
 ### Recommendation
@@ -22,10 +22,11 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> import tool
 >>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
 >>> from recommender import ItemBased
->>> ibcf = ItemBased(trainSet)
+>>> ibcf = ItemBased()
+>>> ibcf.loadData(trainSet)
 >>> model = ibcf.buildModel(nNeighbors=20)
 >>> for user in testSet.keys():
-...     recommendation = ibcf.Recommendation(model, user, topN=10)
+...     recommendation = ibcf.Recommendation(user, model, topN=10)
 ```
 ### Evaluation
 ```python
@@ -33,10 +34,11 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> trainSet = tool.loadData("/home2/movielens/u1.base")
 >>> testSet = tool.loadData("/home2/movielens/u1.test")
 >>> from recommender import UserBased
->>> ubcf = UserBased(trainSet)
+>>> ubcf = UserBased()
+>>> ubcf.loadData(trainSet)
 >>> model = ubcf.buildModel(nNeighbors=30)
 >>> import validation
->>> result = validation.evaluateRecommender(ubcf, model, testSet, topN=10)
+>>> result = validation.evaluateRecommender(testSet, ubcf, model, topN=10)
 >>> print(result)
 {'precision': 0.050980392156862, 'recall': 0.009698538130460, 'hitrate': 0.5098039215686}
 ```
