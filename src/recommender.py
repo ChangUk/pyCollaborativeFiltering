@@ -57,7 +57,7 @@ class UserBased(CollaborativeFiltering):
             self.prefs = data
         elif isinstance(data, str):         # If 'data' is a file path of training data
             self.prefs = tool.loadData(data)
-                
+            
     def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosine_intersection, nNeighbors = 50, useOnlyPositives = True):
         nearestNeighbors = {}
         similarities = [(simMeasure(self.prefs[targetUser], self.prefs[user]), user) for user in self.prefs if targetUser != user]
@@ -110,7 +110,7 @@ class UserBased(CollaborativeFiltering):
             return meanRating + (weightedSum / normalizingFactor)
     
     def Recommendation(self, user, model, topN = 10, binaryMode = False, useOnlyPositives = True):
-        if isinstance(model, dict):         # model = {user: {neighbor: similarity, ...}, ...}
+        if isinstance(model, dict):         # model = {user: {neighbor_user: similarity, ...}, ...}
             nearestNeighbors = model[user]
         elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
             nearestNeighbors = self.getNearestNeighbors(user, model[0], model[1], useOnlyPositives)
@@ -201,7 +201,7 @@ class ItemBased(CollaborativeFiltering):
         for candidate in self.itemList:
             if candidate in self.prefsOnUser[user]: continue
             
-            if isinstance(model, dict):
+            if isinstance(model, dict):         # model = {item: {neighbor_item: similarity, ...}, ...}
                 nearestNeighbors = model[candidate]
             elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
                 nearestNeighbors = self.getNearestNeighbors(candidate, model[0], model[1])

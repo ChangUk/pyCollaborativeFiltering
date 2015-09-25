@@ -30,8 +30,8 @@ def evaluateRecommender(testSet, recommender, model, topN = 10, binaryMode = Fal
     return result
 
 class CrossValidation(object):
-    def KFoldSplit(self, data, fold, nFolds):           # data = {user: {item: rating, ...}, ...}
-        trainSet = deepcopy(data)
+    def KFoldSplit(self, data, fold, nFolds):           # fold: 0~4 when 5-Fold validation
+        trainSet = deepcopy(data)                       # data = {user: {item: rating, ...}, ...}
         testSet = {}
         for user in data:
             testSet.setdefault(user, {})

@@ -20,19 +20,19 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 ### Recommendation
 ```python
 >>> import tool
->>> trainSet, testSet = tool.LeaveOneOutSplit("/home2/movielens/movielens.dat")
+>>> data = tool.loadData("/home/changuk/data/MovieLens/movielens.dat")
 >>> from recommender import ItemBased
 >>> ibcf = ItemBased()
->>> ibcf.loadData(trainSet)
+>>> ibcf.loadData(data)
 >>> model = ibcf.buildModel(nNeighbors=20)
->>> for user in testSet.keys():
+>>> for user in trainSet.keys():
 ...     recommendation = ibcf.Recommendation(user, model, topN=10)
 ```
-### Evaluation
+### Validation
 ```python
 >>> import tool
->>> trainSet = tool.loadData("/home2/movielens/u1.base")
->>> testSet = tool.loadData("/home2/movielens/u1.test")
+>>> trainSet = tool.loadData("/home/changuk/data/MovieLens/u1.base")
+>>> testSet = tool.loadData("/home/changuk/data/MovieLens/u1.test")
 >>> from recommender import UserBased
 >>> ubcf = UserBased()
 >>> ubcf.loadData(trainSet)
