@@ -23,8 +23,10 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> from recommender import UserBased
 >>> ubcf = UserBased()
 >>> ubcf.loadData(data)
+>>> import similarity
+>>> simMeasure = similarity.cosine_intersection
 >>> for user in data.keys():
-...     recommendation = ubcf.Recommendation(user, similarity=cosine, nNeighbors=30, topN=10)
+...     recommendation = ubcf.Recommendation(user, similarity=simMeasure, nNeighbors=30)
 ```
 ### Item-based Recommendation
 ```python
@@ -35,7 +37,7 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> ibcf.loadData(data)
 >>> model = ibcf.buildModel(nNeighbors=20)
 >>> for user in data.keys():
-...     recommendation = ibcf.Recommendation(user, model=model, topN=10)
+...     recommendation = ibcf.Recommendation(user, model=model)
 ```
 ### Validation
 ```python
