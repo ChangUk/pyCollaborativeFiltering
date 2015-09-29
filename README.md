@@ -24,7 +24,7 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> ubcf = UserBased()
 >>> ubcf.loadData(data)
 >>> for user in data.keys():
-...     recommendation = ubcf.Recommendation(user, similarity=cosine_intersection, nNeighbors=10, topN=10)
+...     recommendation = ubcf.Recommendation(user, similarity=cosine, nNeighbors=30, topN=10)
 ```
 ### Item-based Recommendation
 ```python
@@ -52,7 +52,7 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 {'precision': 0.050980392156862, 'recall': 0.009698538130460, 'hitrate': 0.5098039215686}
 ```
 
-### TODO list
+## TODO list
 * Support binary data
 * Implement similarity normalization in Item-based CF
 
