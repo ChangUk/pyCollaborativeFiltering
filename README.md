@@ -7,17 +7,26 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 * Prerequisite libraries: [Numpy](http://numpy.org)
 
 ## Specification of user-based method
-* Main difference from the original CF method is that when calculating the predicted score on the item the task finding nearest neighbors of target user precedes the work looking for users who rated the item.
-* User-user similarity does not include those of neighbors whose similarity is zero or lower value.
-* The similarity between users is multiplied by a weight according to the number of co-rated items. (Significance Weighting)
-* The algorithm basically uses the cosine similarity considering only co-rated items. (Another measure such as Pearson correlation coefficient is also applicable.)
-* Support binary type(rated or not) of rating data.  In this case, the similarity average of the nearest neighbors who rated the item is used as a predicted score of the item.
+* If you use a built-up model, the recommender system considers only the nearest neighbors existing in the model. Otherwise, the recommender looks for K-similar neighbors for each target user by using the given similarity measure and the number(K) of nearest neighbors.
+* In unary data, the average similarity of the nearest neighbors who rated on the item is the predicted score of the item.
+* User similarity does not include those of neighbors whose similarity is zero or lower value.
+* The cosine similarity basically considers only co-rated items. (Another measures such as the basic cosine similarity and Pearson correlation coefficient are also applicable.)
 
 ## Input data format
 `UserID \t ItemID \t Rating \n`
 
 ## Usage example
-### Recommendation
+### User-based Recommendation
+```python
+>>> import tool
+>>> data = tool.loadData("/home/changuk/data/MovieLens/movielens.dat")
+>>> from recommender import UserBased
+>>> ubcf = UserBased()
+>>> ubcf.loadData(data)
+>>> for user in data.keys():
+...     recommendation = ubcf.Recommendation(user, similarity=cosine_intersection, nNeighbors=10, topN=10)
+```
+### Item-based Recommendation
 ```python
 >>> import tool
 >>> data = tool.loadData("/home/changuk/data/MovieLens/movielens.dat")
@@ -25,8 +34,8 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> ibcf = ItemBased()
 >>> ibcf.loadData(data)
 >>> model = ibcf.buildModel(nNeighbors=20)
->>> for user in trainSet.keys():
-...     recommendation = ibcf.Recommendation(user, model, topN=10)
+>>> for user in data.keys():
+...     recommendation = ibcf.Recommendation(user, model=model, topN=10)
 ```
 ### Validation
 ```python
@@ -38,10 +47,14 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 >>> ubcf.loadData(trainSet)
 >>> model = ubcf.buildModel(nNeighbors=30)
 >>> import validation
->>> result = validation.evaluateRecommender(testSet, ubcf, model, topN=10)
+>>> result = validation.evaluateRecommender(testSet, ubcf, model=model, topN=10)
 >>> print(result)
 {'precision': 0.050980392156862, 'recall': 0.009698538130460, 'hitrate': 0.5098039215686}
 ```
+
+### TODO list
+* Support binary data
+* Implement similarity normalization in Item-based CF
 
 ## References
 * [An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)](http://files.grouplens.org/papers/algs.pdf)

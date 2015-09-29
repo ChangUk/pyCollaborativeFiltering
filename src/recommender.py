@@ -7,11 +7,18 @@ import similarity
 import tool
 
 
+class DataType:
+    Unary = 1       # Like, purchase, etc
+    Binary = 2      # Like/dislike, thumb-up/thumb-down, true/false, etc
+    Explicit = 3    # User-Item-Score, etc
+
 class CollaborativeFiltering(object):
     __metaclass__ = abc.ABCMeta
     
-    def __init__(self):
-        self.prefs = {}
+    def __init__(self, dataType = DataType.Explicit):
+        self.dataType = dataType
+        self.prefs = None
+        self.itemList = None
     
     @classmethod
     @abc.abstractmethod
@@ -22,6 +29,13 @@ class CollaborativeFiltering(object):
     @abc.abstractmethod
     def Recommendation(cls):
         raise NotImplementedError
+    
+    def getNearestNeighbors(self, target, simMeasure, nNeighbors = None):
+        similarities = [(simMeasure(self.prefs[target], self.prefs[other]), other) for other in self.prefs if target != other]
+        similarities.sort(reverse = True)
+        if nNeighbors != None:
+            similarities = similarities[0:nNeighbors]
+        return similarities     # similarities = [(similarity, neighbor), ...]
     
     def loadExtModel(self, pathDump):
         print("Loading external model...")
@@ -48,8 +62,8 @@ class UserBased(CollaborativeFiltering):
     For more details, reference the following paper:
     An Algorithmic Framework for Performing Collaborative Filtering - Herlocker, Konstan, Borchers, Riedl (SIGIR 1999)
     '''
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataType = DataType.Explicit):
+        super().__init__(dataType)
         print("User-based Collaborative Filtering")
         
     def loadData(self, data):
@@ -57,20 +71,14 @@ class UserBased(CollaborativeFiltering):
             self.prefs = data
         elif isinstance(data, str):         # If 'data' is a file path of training data
             self.prefs = tool.loadData(data)
-            
-    def getNearestNeighbors(self, targetUser, simMeasure = similarity.cosine_intersection, nNeighbors = 50, useOnlyPositives = True):
-        nearestNeighbors = {}
-        similarities = [(simMeasure(self.prefs[targetUser], self.prefs[user]), user) for user in self.prefs if targetUser != user]
-        similarities.sort(reverse = True)
-        for similarity, neighbor in similarities[0:nNeighbors]:
-            if useOnlyPositives == True and similarity <= 0:
-                continue
-            nearestNeighbors[neighbor] = similarity
-        return nearestNeighbors
+        self.itemList = {}
+        for user in self.prefs:
+            for item in self.prefs[user]:
+                self.itemList[item] = None
     
-    def buildModel(self, simMeasure = similarity.cosine_intersection, nNeighbors = 50, pathDump = None):
+    def buildModel(self, simMeasure = similarity.cosine_intersection, nNeighbors = None, pathDump = None):
         # Model contains top-K similar users for each user and their similarities.
-        # Model format: {user: {neighbor: similarity, ...}, ...}
+        # Model format: {user: [(similarity, neighbor), ...], ...}
         model = self.loadExtModel(pathDump)
         if model != None:
             return model
@@ -80,23 +88,26 @@ class UserBased(CollaborativeFiltering):
         for user in self.prefs:
             model[user] = self.getNearestNeighbors(user, simMeasure, nNeighbors)
             
-        if isinstance(pathDump, str):
+        if pathDump != None:
             self.dumpModel(model, pathDump)
         print("\tComplete!")
         return model
     
-    def getPredictedRating(self, user, item, nearestNeighbors, binaryMode = False):
-        if binaryMode == True:
+    def getPredictedRating(self, user, item, nearestNeighbors):
+        if self.dataType == DataType.Unary:
             if item in self.prefs[user]:
                 return 1.0
             similarities = [similarity for neighbor, similarity in nearestNeighbors.items() if item in self.prefs[neighbor]]
             if len(similarities) == 0:
                 return 0.0
             return np.mean(similarities)
-        else:
+        elif self.dataType == DataType.Binary:
+            # Not supported yet
+            return 0.0
+        elif self.dataType == DataType.Explicit:
             if item in self.prefs[user]:
                 return self.prefs[user][item]
-            meanRating = np.mean([r for r in self.prefs[user].values()])
+            meanRating = np.mean([score for score in self.prefs[user].values()])
             weightedSum = 0
             normalizingFactor = 0
             for neighbor, similarity in nearestNeighbors.items():
@@ -109,24 +120,46 @@ class UserBased(CollaborativeFiltering):
                 return 0
             return meanRating + (weightedSum / normalizingFactor)
     
-    def Recommendation(self, user, model, topN = 10, binaryMode = False, useOnlyPositives = True):
-        if isinstance(model, dict):         # model = {user: {neighbor_user: similarity, ...}, ...}
-            nearestNeighbors = model[user]
-        elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
-            nearestNeighbors = self.getNearestNeighbors(user, model[0], model[1], useOnlyPositives)
+    def Recommendation(self, user, simMeasure = similarity.cosine_intersection, nNeighbors = 50, model = None, topN = None):
+        if model != None:
+            '''
+            If a user-user similarity model is given,
+            other parameters such as similarity measure and the number of nearest neighbors are ignored.
+            It is because that the similarity measure and # of neighbors are determined during the model building.
+            '''
+            candidateItems = {}         # List of candidate items to be recommended
+            nearestNeighbors = {}       # List of nearest neighbors
+            for similarity, neighbor in model[user]:
+                if similarity <= 0:
+                    break
+                nearestNeighbors[neighbor] = similarity
+                for item in self.prefs[neighbor]:
+                    candidateItems[item] = None
+            predictedScores = [(self.getPredictedRating(user, item, nearestNeighbors), item)
+                               for item in candidateItems if item not in self.prefs[user]]
         else:
-            return []
+            '''
+            If a model is not given, the recommendation task follows the original CF method.
+            After finding K-nearest neighbors who have rating history on the item,
+            the recommendation is made by using their similarities.
+            '''
+            predictedScores = []        # predictedScores = [(predicted_score, item), ...]
+            similarities = self.getNearestNeighbors(user, simMeasure)   # similarities = [(similarity, neighbor), ...]
+            for item in self.itemList:
+                if item in self.prefs[user]:
+                    continue
+                itemRaters = {}         # Nearest neighbors who rated on the item
+                for similarity, neighbor in similarities:
+                    if similarity <= 0 or len(itemRaters) == nNeighbors:
+                        break
+                    if item in self.prefs[neighbor]:
+                        itemRaters[neighbor] = similarity
+                predictedScores.append((self.getPredictedRating(user, item, itemRaters), item))
         
-        # Get list of candidate items to be recommended
-        candidateItems = {}
-        for neighbor in nearestNeighbors:
-            for item in self.prefs[neighbor]:
-                candidateItems[item] = None
-        
-        predictedScores = [(self.getPredictedRating(user, item, nearestNeighbors, binaryMode), item)
-                           for item in candidateItems if item not in self.prefs[user]]
         predictedScores.sort(reverse = True)
-        recommendation = [item for similarity, item in predictedScores[0:topN]]
+        recommendation = [item for similarity, item in predictedScores]
+        if topN != None:
+            recommendation = recommendation[0:topN]
         return recommendation
     
 class ItemBased(CollaborativeFiltering):
@@ -134,8 +167,8 @@ class ItemBased(CollaborativeFiltering):
     For more details, reference the following paper:
     Item-based Top-N Recommendation Algorithms - Deshpande, Karypis (TOIS 2004)
     '''
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataType = DataType.Explicit):
+        super().__init__(dataType)
         print("Item-based Collaborative Filtering")
         
     def loadData(self, data):
@@ -146,14 +179,6 @@ class ItemBased(CollaborativeFiltering):
             self.prefsOnUser = tool.loadData(data)
             self.prefs = tool.transposePrefs(self.prefsOnUser)
         self.itemList = self.prefs.keys()
-    
-    def getNearestNeighbors(self, targetItem, simMeasure = similarity.cosine, nNeighbors = 20):
-        nearestNeighbors = {}
-        similarities = [(simMeasure(self.prefs[targetItem], self.prefs[item]), item) for item in self.prefs if targetItem != item]
-        similarities.sort(reverse = True)
-        for similarity, neighbor in similarities[0:nNeighbors]:
-            nearestNeighbors[neighbor] = similarity
-        return nearestNeighbors
     
     def buildModel(self, simMeasure = similarity.cosine, nNeighbors = 20, pathDump = None):
         '''
@@ -169,13 +194,14 @@ class ItemBased(CollaborativeFiltering):
         print("Model builder is running...")
         model = {}
         for item in self.prefs:
-            model[item] = self.getNearestNeighbors(item, simMeasure, nNeighbors)
+            model.setdefault(item, {})
+            correlations = self.getNearestNeighbors(item, simMeasure, nNeighbors)
+            for correlation, neighbor in correlations:
+                model[item][neighbor] = correlation
         
         # Row normalization
-        for c in model.keys():
-            COLSUM = 0
-            for r in model[c]:
-                COLSUM += model[c][r]
+        for c in model:
+            COLSUM = sum([model[c][r] for r in model[c]])
             if COLSUM > 0:
                 for r in model[c]:
                     model[c][r] /= COLSUM
@@ -185,7 +211,7 @@ class ItemBased(CollaborativeFiltering):
         print("\tComplete!")
         return model
     
-    def Recommendation(self, user, model, topN = 10, binaryMode = None, useOnlyPositives = None):
+    def Recommendation(self, user, simMeasure = similarity.cosine, nNeighbors = 20, model = None, topN = None):
         '''
         Pseudo code:
         ApplyModel(M, U, N):
@@ -199,15 +225,19 @@ class ItemBased(CollaborativeFiltering):
         '''
         predictedScores = []
         for candidate in self.itemList:
-            if candidate in self.prefsOnUser[user]: continue
+            if candidate in self.prefsOnUser[user]:
+                continue
             
-            if isinstance(model, dict):         # model = {item: {neighbor_item: similarity, ...}, ...}
-                nearestNeighbors = model[candidate]
-            elif isinstance(model, tuple):      # model = (similarityMeasure, nNearestNeighbors)
-                nearestNeighbors = self.getNearestNeighbors(candidate, model[0], model[1])
-                
-            score = sum([nearestNeighbors[candidate] * self.prefsOnUser[user][item] for item in self.prefsOnUser[user] if candidate in nearestNeighbors])
+            if model != None:
+                correlations = model[candidate]
+            else:
+                correlations = self.getNearestNeighbors(candidate, simMeasure, nNeighbors)
+            
+            score = sum([correlations[candidate] * self.prefsOnUser[user][item]
+                         for item in self.prefsOnUser[user] if candidate in correlations])
             predictedScores.append((score, candidate))
         predictedScores.sort(reverse = True)
-        recommendation = [item for similarity, item in predictedScores[0:topN]]
+        recommendation = [item for similarity, item in predictedScores]
+        if topN != None:
+            recommendation = recommendation[0:topN]
         return recommendation

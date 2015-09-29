@@ -2,7 +2,7 @@ from copy import deepcopy
 from datetime import datetime
 
 
-def evaluateRecommender(testSet, recommender, model, topN = 10, binaryMode = False, useOnlyPositives = True):
+def evaluateRecommender(testSet, recommender, simMeasure = None, nNeighbors = None, model = None, topN = None):
     # Evaluation metrics
     totalPrecision = 0
     totalRecall = 0
@@ -10,7 +10,7 @@ def evaluateRecommender(testSet, recommender, model, topN = 10, binaryMode = Fal
     totalHit = 0
     
     for user in testSet:
-        recommendation = recommender.Recommendation(user, model, topN, binaryMode, useOnlyPositives)
+        recommendation = recommender.Recommendation(user, simMeasure = simMeasure, nNeighbors = nNeighbors, model = model, topN = topN)
         hit = sum([1 for item in testSet[user] if item in recommendation])
         precision = hit / topN
         recall = hit / len(testSet[user])
@@ -45,7 +45,7 @@ class CrossValidation(object):
             testSet[user] = testItems
         return trainSet, testSet
     
-    def KFold(self, data, recommender, model, topN = 10, nFolds = 5):
+    def KFold(self, data, recommender, simMeasure = None, nNeighbors = None, model = None, topN = 10, nFolds = 5):
         start_time = datetime.now()
         
         # Evaluation metrics
@@ -57,7 +57,7 @@ class CrossValidation(object):
         for fold in range(nFolds):
             trainSet, testSet = self.KFoldSplit(data, fold, nFolds)
             recommender.loadData(trainSet)
-            evaluation = evaluateRecommender(testSet, recommender, model, topN)
+            evaluation = evaluateRecommender(testSet, recommender, simMeasure = simMeasure, nNeighbors = nNeighbors, model = model, topN = topN)
                 
             totalPrecision += evaluation["Precision"]
             totalRecall += evaluation["Recall"]
@@ -85,7 +85,7 @@ class CrossValidation(object):
             testSet[user][item] = float(trainSet[user].pop(item))
         return trainSet, testSet
     
-    def LeaveOneOut(self, data, recommender, model, topN = 10):
+    def LeaveOneOut(self, data, recommender, simMeasure = None, nNeighbors = None, model = None, topN = 10):
         start_time = datetime.now()
         
         # Evaluation metrics
@@ -99,7 +99,7 @@ class CrossValidation(object):
             for item in data[user]:
                 trainSet, testSet = self.LeaveKOutSplit(data, user, [item])
                 recommender.loadData(trainSet)
-                evaluation = evaluateRecommender(testSet, recommender, model, topN)
+                evaluation = evaluateRecommender(testSet, recommender, simMeasure = simMeasure, nNeighbors = nNeighbors, model = model, topN = topN)
                 
                 totalPrecision += evaluation["Precision"]
                 totalRecall += evaluation["Recall"]

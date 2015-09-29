@@ -60,7 +60,7 @@ def cosine_intersection(dataA, dataB):
         print("Error: input data type is invalid.")
         return -1
     
-def pearson(dataA, dataB):
+def pearson(dataA, dataB, significanceWeighting = False):
     if type(dataA) is list and type(dataB) is list:
         if len(dataA) != len(dataB):
             print("Error: the length of two input lists are not same.")
@@ -76,7 +76,7 @@ def pearson(dataA, dataB):
         deviationB = sqrt(sum([(dataB[i] - meanB) ** 2 for i in intersection]))
         if (deviationA * deviationB) == 0:
             return 0
-        return numerator / (deviationA * deviationB)
+        correlation = numerator / (deviationA * deviationB)
     elif type(dataA) is dict and type(dataB) is dict:
         intersection = [obj for obj in dataA if obj in dataB]
         if len(intersection) == 0:
@@ -89,15 +89,17 @@ def pearson(dataA, dataB):
         if (deviationA * deviationB) == 0:
             return 0
         correlation = numerator / (deviationA * deviationB)
-        
-        # Correlation significance weighting
-        if len(intersection) < 50:
-            correlation *= (len(intersection) / 50)
-        
-        return correlation
     else:
         print("Error: input data type is invalid.")
         return -1
+    
+    # Correlation significance weighting
+    # Reference: An Algorithmic Framework for Performing Collaborative Filtering (SIGIR 1999)
+    if significanceWeighting == True:
+        if len(intersection) < 50:
+            correlation *= (len(intersection) / 50)
+    
+    return correlation
     
 def jaccard(dataA, dataB):
     # Jaccard similarity is applicable to both list type and dictionary type.
