@@ -8,7 +8,7 @@ User-based and Item-based Collaborative Filtering algorithms written in Python
 
 ## Specification of user-based method
 * If you use a built-up model, the recommender system considers only the nearest neighbors existing in the model. Otherwise, the recommender looks for K-similar neighbors for each target user by using the given similarity measure and the number(K) of nearest neighbors.
-* In unary data, the average similarity of the nearest neighbors who rated on the item is the predicted score of the item.
+* In unary data, the predicted score of the item is the average similarity of the nearest neighbors who rated on the item.
 * User similarity does not include those of neighbors whose similarity is zero or lower value.
 * The cosine similarity basically considers only co-rated items. (Another measures such as the basic cosine similarity and Pearson correlation coefficient are also applicable.)
 
